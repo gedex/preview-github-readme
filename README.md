@@ -11,20 +11,19 @@ The preview that mimics repo's homepage in [GitHub](https://github.com).
 ## How to use
 
 ```
-$ go build -o previewer main.go
-$ alias previewer /path/to/previewer # Better to put this into your shell's profile
-$ previewer README.md                # Will output generated HTML into stdout
-$ previewer /my/repo/readme.md       # Works on any path
+$ go install github.com/gedex/preview-github-readme
+$ preview-github-readme README.md           # Will output generated HTML into stdout
+$ preview-github-readme /my/repo/readme.md  # Works on any path
 ```
 
 Pipes it to browser:
 
 ```
-$ ./previewer README.md | browser
+$ preview-github-readme README.md | browser
 ```
 
 or:
 
 ```
-$ ./previewer --serve 8080 README.md # Previewer is available on http://localhost:8080
+$ preview-github-readme --serve 8080 README.md # Previewer is available on http://localhost:8080
 ````
