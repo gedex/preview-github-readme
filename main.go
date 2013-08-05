@@ -7,9 +7,10 @@
 package main
 
 import (
- 	"bytes"
+	"bytes"
 	"flag"
 	"fmt"
+	"go/build"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -19,16 +20,16 @@ import (
 )
 
 const (
-	ua  = "preview-github-readme.go v0.1.0"
-	url = "https://api.github.com/markdown/raw"
+	ua        = "preview-github-readme.go v0.1.0"
+	url       = "https://api.github.com/markdown/raw"
+	importStr = "github.com/gedex/preview-github-readme"
 )
 
 var (
-	css   string
-	serve string
-	pwd            = filepath.Dir(os.Getenv("_")) + string(os.PathSeparator)
+	css            string
+	serve          string
 	serveValidator = regexp.MustCompile("^[0-9]+$")
-	tpl            = template.Must(template.ParseFiles(pwd + "template.html"))
+	tpl            *template.Template
 )
 
 // getRenderedReadme reads from filename and returns
@@ -44,13 +45,20 @@ func getRenderedReadme(filename string) (string, error) {
 		return "", err
 	}
 
-	css, err := ioutil.ReadFile(pwd + "style.css")
+	cssPath := "./style.css"
+	if pkg, err := build.Import(importStr, "", build.FindOnly); err == nil {
+		p := filepath.Join(pkg.Dir, "style.css")
+		if _, err := os.Stat(p); err == nil {
+			cssPath = p
+		}
+	}
+	css, err := ioutil.ReadFile(cssPath)
 	if err != nil {
 		return "", nil
 	}
 
-	var out     = bytes.NewBuffer(nil)
-	var tplData = &struct{Css, Html string}{
+	var out = bytes.NewBuffer(nil)
+	var tplData = &struct{ Css, Html string }{
 		fmt.Sprintf("<style type=\"text/css\">%s</style>", css),
 		html}
 
@@ -64,7 +72,7 @@ func getRenderedReadme(filename string) (string, error) {
 // getParsedMarkdown makes a POST to GitHub endpoint to render given bytes
 // and returns it as HTML string
 func getParsedMarkdown(buf []byte) (string, error) {
-	client   := &http.Client{}
+	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, bytes.NewReader(buf))
 	if err != nil {
 		return "", err
@@ -94,6 +102,19 @@ func usage() {
 	os.Exit(1)
 }
 
+func init() {
+	tplPath := "./template.html"
+
+	if pkg, err := build.Import(importStr, "", build.FindOnly); err == nil {
+		p := filepath.Join(pkg.Dir, "template.html")
+		if _, err := os.Stat(p); err == nil {
+			tplPath = p
+		}
+	}
+
+	tpl = template.Must(template.ParseFiles(tplPath))
+}
+
 func main() {
 
 	// Set and parse flags
@@ -118,6 +139,6 @@ func main() {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, html)
 		})
-		http.ListenAndServe(":" + serve, nil)
+		http.ListenAndServe(":"+serve, nil)
 	}
 }
