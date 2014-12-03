@@ -11,7 +11,7 @@ The preview that mimics repo's homepage in [GitHub](https://github.com).
 ## How to use
 
 ```
-$ go install github.com/gedex/preview-github-readme
+$ go get github.com/gedex/preview-github-readme
 $ preview-github-readme README.md           # Will output generated HTML into stdout
 $ preview-github-readme /my/repo/readme.md  # Works on any path
 ```
